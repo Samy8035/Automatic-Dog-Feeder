@@ -21,6 +21,7 @@ https://www.thingiverse.com/thing:2953499
 https://www.thingiverse.com/thing:2885180
 https://www.thingiverse.com/thing:7026628
 https://grabcad.com/library/automatic-pet-feeder-dog-cat-etc-1
+https://www.thingiverse.com/thing:4255428
 
 
 
@@ -29,11 +30,13 @@ https://www.thingiverse.com/thing:4703928/files
 https://pinshape.com/items/35426-3d-printed-automatic-feeder-for-aquarium-controlled-by-arduino-robotkjr
 https://www.stlfinder.com/model/automatic-weekly-fish-tank-feeder-64sMM1zf/4548671
 https://www.thingiverse.com/thing:5177911
-https://www.thingiverse.com/thing:5177911
+https://pinshape.com/items/7681-3d-printed-automatic-fish-feeder
+https://www.thingiverse.com/thing:1257953/files
 
 Entera + pastillero:
 https://www.thingiverse.com/thing:3610911
 https://cults3d.com/en/3d-model/tool/automated-pet-feeder
+https://www.thingiverse.com/thing:3449577
 
 
 Tornillo:
