@@ -37,6 +37,9 @@ Entera + pastillero:
 https://www.thingiverse.com/thing:3610911
 https://cults3d.com/en/3d-model/tool/automated-pet-feeder
 https://www.thingiverse.com/thing:3449577
+https://makerworld.com/es/models/503429-pet-feeder#profileId-418939
+https://makerworld.com/es/models/174640-weekly-pill-dispenser#profileId-192020 (solo mecanismo, es un pastillero)
+
 
 
 Tornillo:
