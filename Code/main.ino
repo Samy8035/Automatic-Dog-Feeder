@@ -18,33 +18,39 @@
 #include <AccelStepper.h>
 #include "esp_camera.h"
 
+// Seleccionar modelo de cámara (descomentar el que corresponda)
+#define CAMERA_MODEL_ESP32S3_EYE // ESP32-S3 WROOM CAM
+
+#include "camera_pins.h"
+
 // ========== CONFIGURACIÓN DE PINES ==========
 // Motor paso a paso (compatible con A4988/DRV8825)
-#define STEP_PIN 12
-#define DIR_PIN 13
-#define ENABLE_PIN 15
+// Usar pines GPIO disponibles que NO interfieran con la cámara
+#define STEP_PIN 1
+#define DIR_PIN 2
+#define ENABLE_PIN 42
 
 // Sensores y actuadores
-#define PIR_PIN 14
-#define BUZZER_PIN 2
+#define PIR_PIN 41
+#define BUZZER_PIN 21
 
-// Configuración del ESP32-CAM (AI-Thinker)
-#define PWDN_GPIO_NUM     32
+// Configuración del ESP32-S3 WROOM CAM
+#define PWDN_GPIO_NUM     -1
 #define RESET_GPIO_NUM    -1
-#define XCLK_GPIO_NUM      0
-#define SIOD_GPIO_NUM     26
-#define SIOC_GPIO_NUM     27
-#define Y9_GPIO_NUM       35
-#define Y8_GPIO_NUM       34
-#define Y7_GPIO_NUM       39
-#define Y6_GPIO_NUM       36
-#define Y5_GPIO_NUM       21
-#define Y4_GPIO_NUM       19
-#define Y3_GPIO_NUM       18
-#define Y2_GPIO_NUM        5
-#define VSYNC_GPIO_NUM    25
-#define HREF_GPIO_NUM     23
-#define PCLK_GPIO_NUM     22
+#define XCLK_GPIO_NUM     10
+#define SIOD_GPIO_NUM     40
+#define SIOC_GPIO_NUM     39
+#define Y9_GPIO_NUM       48
+#define Y8_GPIO_NUM       11
+#define Y7_GPIO_NUM       12
+#define Y6_GPIO_NUM       14
+#define Y5_GPIO_NUM       16
+#define Y4_GPIO_NUM       18
+#define Y3_GPIO_NUM       17
+#define Y2_GPIO_NUM       15
+#define VSYNC_GPIO_NUM    38
+#define HREF_GPIO_NUM     47
+#define PCLK_GPIO_NUM     13
 
 // ========== CONFIGURACIÓN WIFI ==========
 const char* ssid = "TU_WIFI";
@@ -158,7 +164,8 @@ void initCamera() {
   camera_config.pixel_format = PIXFORMAT_JPEG;
   camera_config.frame_size = FRAMESIZE_VGA;
   camera_config.jpeg_quality = 12;
-  camera_config.fb_count = 1;
+  camera_config.fb_count = 2;  // ESP32-S3 tiene más RAM, usar 2 buffers
+  camera_config.grab_mode = CAMERA_GRAB_LATEST;  // Usar última imagen disponible
   
   esp_err_t err = esp_camera_init(&camera_config);
   if (err != ESP_OK) {
