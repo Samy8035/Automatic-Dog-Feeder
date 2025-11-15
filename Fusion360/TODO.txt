@@ -1,0 +1,2 @@
+1. Hacer que los agujeros de los tornillos de la base sean macizos, osea con relleno muy alto, con la herramienta de modificacion de BambuLab.
+2. Hacer que la distancia de la pala a la base, es para que no roce, en vez de 0.4, sea de 1
