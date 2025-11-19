@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐕 Comedero Automático</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐕 Comedero Automático</h1>
+            <div class="status-indicator" id="connectionStatus">
+                <span class="dot"></span>
+                <span>Conectando...</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Estado de Alimentación -->
+            <div class="card">
+                <h2>🍽️ Estado de Alimentación</h2>
+                <div class="status-display">
+                    <div class="status-item">
+                        <span class="label">Estado:</span>
+                        <span id="feedingState" class="value">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Progreso:</span>
+                        <div class="progress-bar">
+                            <div id="feedingProgress" class="progress-fill"></div>
+                        </div>
+                        <span id="progressText" class="value">0%</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Compartimento:</span>
+                        <span id="currentCompartment" class="value">-</span>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button id="btnFeedNow" class="btn btn-primary">Alimentar Ahora</button>
+                    <button id="btnCancel" class="btn btn-secondary" disabled>Cancelar</button>
+                </div>
+            </div>
+
+            <!-- Sensores Ambientales -->
+            <div class="card">
+                <h2>🌡️ Sensores Ambientales</h2>
+                <div class="sensor-display">
+                    <div class="sensor-item">
+                        <span class="sensor-icon">🌡️</span>
+                        <div class="sensor-data">
+                            <span class="sensor-label">Temperatura</span>
+                            <span id="temperature" class="sensor-value">--°C</span>
+                        </div>
+                    </div>
+                    <div class="sensor-item">
+                        <span class="sensor-icon">💧</span>
+                        <div class="sensor-data">
+                            <span class="sensor-label">Humedad</span>
+                            <span id="humidity" class="sensor-value">--%</span>
+                        </div>
+                    </div>
+                    <div class="sensor-item">
+                        <span class="sensor-icon">👁️</span>
+                        <div class="sensor-data">
+                            <span class="sensor-label">Presencia</span>
+                            <span id="presence" class="sensor-value">No detectada</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cámara -->
+            <div class="card card-wide">
+                <h2>📷 Cámara en Vivo</h2>
+                <div class="camera-container">
+                    <img id="cameraStream" src="/camera/stream" alt="Cámara no disponible">
+                    <div class="camera-controls">
+                        <button id="btnCapture" class="btn btn-secondary">📸 Capturar</button>
+                        <button id="btnRefresh" class="btn btn-secondary">🔄 Actualizar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Programación -->
+            <div class="card">
+                <h2>⏰ Programación</h2>
+                <div class="config-group">
+                    <div class="config-item">
+                        <label>
+                            <input type="checkbox" id="autoEnabled" checked>
+                            Alimentación automática
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label>Intervalo (horas):</label>
+                        <input type="number" id="feedingInterval" min="1" max="24" value="4">
+                    </div>
+                    <div class="config-item">
+                        <label>Porciones por día:</label>
+                        <input type="number" id="portionsPerDay" min="1" max="10" value="4">
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Próxima alimentación:</span>
+                        <span id="nextFeeding" class="value">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Alimentaciones hoy:</span>
+                        <span id="feedingsToday" class="value">0/4</span>
+                    </div>
+                </div>
+                <button id="btnSaveSchedule" class="btn btn-primary">Guardar Configuración</button>
+            </div>
+
+            <!-- Configuración Avanzada -->
+            <div class="card">
+                <h2>⚙️ Configuración Avanzada</h2>
+                <div class="config-group">
+                    <div class="config-item">
+                        <label>
+                            <input type="checkbox" id="requirePresence" checked>
+                            Requiere detección de presencia
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label>
+                            <input type="checkbox" id="playSound" checked>
+                            Reproducir sonido antes de alimentar
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label>
+                            <input type="checkbox" id="tempAlerts" checked>
+                            Alertas de temperatura
+                        </label>
+                    </div>
+                    <div class="config-item">
+                        <label>
+                            <input type="checkbox" id="humidityAlerts" checked>
+                            Alertas de humedad
+                        </label>
+                    </div>
+                </div>
+                <button id="btnSaveConfig" class="btn btn-primary">Guardar Configuración</button>
+            </div>
+
+            <!-- Sistema -->
+            <div class="card">
+                <h2>💾 Información del Sistema</h2>
+                <div class="status-display">
+                    <div class="status-item">
+                        <span class="label">WiFi:</span>
+                        <span id="wifiStatus" class="value">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Memoria libre:</span>
+                        <span id="freeHeap" class="value">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Uptime:</span>
+                        <span id="uptime" class="value">-</span>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button id="btnResetDaily" class="btn btn-secondary">Reiniciar Contador</button>
+                    <button id="btnReboot" class="btn btn-danger">Reiniciar Sistema</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Comedero Automático v1.0 | Última actualización: <span id="lastUpdate">-</span></p>
+        </footer>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
