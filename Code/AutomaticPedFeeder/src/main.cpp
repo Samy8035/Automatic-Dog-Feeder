@@ -192,7 +192,7 @@ void setup() {
 }
 
 
-int getCurrentDay() {
+int getCurrentDay() { //!crear un TimeUtils
     struct tm timeinfo;
     if (getLocalTime(&timeinfo)) {
         return timeinfo.tm_mday; // día del mes 1..31
