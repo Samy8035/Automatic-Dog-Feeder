@@ -11,6 +11,7 @@
 #include "communication/TelegramBot.h"
 #include "storage/ConfigManager.h"
 #include "utils/Logger.h"
+#include <time.h>
 
 // ========== OBJETOS GLOBALES ==========
 StepperController stepperController;
@@ -99,6 +100,27 @@ void setup() {
     
     if (WiFi.status() == WL_CONNECTED) {
         logger.info("WiFi conectado - IP: " + WiFi.localIP().toString());
+        // ================================
+        // 🔵 SINCRONIZACIÓN NTP
+        // ================================
+        setenv("TZ", "CET-1CEST,M3.5.0/2,M10.5.0/3", 1);
+        tzset();
+
+        configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+        logger.info("Sincronizando hora por NTP...");
+
+        struct tm timeinfo;
+        int tries = 0;
+        while (!getLocalTime(&timeinfo) && tries < 10) {
+            delay(500);
+            tries++;
+        }
+
+        if (tries < 10)
+            logger.info("Hora NTP obtenida ✔️");
+        else
+            logger.warning("No se pudo obtener hora NTP ❌");
+        // ================================
     } else {
         logger.error("No se pudo conectar a WiFi");
     }
@@ -169,6 +191,15 @@ void setup() {
     logger.info(sensorManager.getEnvironmentStatus());
 }
 
+
+int getCurrentDay() {
+    struct tm timeinfo;
+    if (getLocalTime(&timeinfo)) {
+        return timeinfo.tm_mday; // día del mes 1..31
+    }
+    return -1; // indica que no hay hora válida
+}
+
 // ========== LOOP ==========
 
 void loop() {
@@ -192,14 +223,23 @@ void loop() {
     }
     
     // Reset diario del contador de alimentaciones
-    static int lastDay = 0;
-    int currentDay = day();
-    if (currentDay != lastDay) {
-        globalConfig.feedingsToday = 0;
-        lastDay = currentDay;
-        logger.info("Nuevo día - contador de alimentaciones reiniciado");
+    static int lastDay = -1;
+    int currentDay = getCurrentDay();
+    if (currentDay != -1)
+    {
+        if (currentDay != lastDay)
+        {
+            globalConfig.feedingsToday = 0;
+            lastDay = currentDay;
+            logger.info("Nuevo día - contador de alimentaciones reiniciado");
+        }
     }
-    
+    else
+    {
+        // Si no hay tiempo, opcional: no reiniciamos para evitar falsos positivos.
+        // logger.debug("Hora no disponible, no se reinicia contador diario");
+    }
+
     yield();  // Dar tiempo a otras tareas
 }
 

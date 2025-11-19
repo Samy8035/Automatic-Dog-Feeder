@@ -90,7 +90,7 @@ private:
     void updateDHT();
     void updatePIR();
     void checkEnvironmentAlerts();
-    AlertType evaluateEnvironment();
+    AlertType evaluateEnvironment() const;
     String getAlertMessage(AlertType alert);
 };
 

@@ -47,8 +47,8 @@ public:
     MotorState getState() const { return state; }
     bool isMotorMoving() const { return state == MOTOR_MOVING; }
     bool isEnabled() const { return enabled; }
-    float getProgress() const;
-    long getStepsToTarget() const;
+    float getProgress();
+    long getStepsToTarget();
     
     // Configuración
     void setMaxSpeed(float speed);

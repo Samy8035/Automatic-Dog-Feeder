@@ -325,6 +325,23 @@ Para problemas o preguntas:
 
 
 
+1. Configurar tus credenciales en src/config.h:
+#define WIFI_SSID "TU_RED_WIFI"
+#define WIFI_PASSWORD "TU_CONTRASEÑA_WIFI"
+#define BOT_TOKEN "TOKEN_DE_TU_BOT_TELEGRAM"
+
+2. Compilar y subir el código:
+cd Code/AutomaticPedFeeder
+pio run --target upload
+
+3. Subir el sistema de archivos web:
+pio run --target uploadfs
+
+4. Monitorear el arranque:
+pio device monitor
+
+
+
 
 
 

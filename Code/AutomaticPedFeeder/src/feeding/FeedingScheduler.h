@@ -52,7 +52,7 @@ public:
     
 private:
     bool shouldFeedNow() const;
-    void executeFe eding();
+    void executeFeeding();
     String formatTimeRemaining(unsigned long milliseconds) const;
 };
 

@@ -110,7 +110,7 @@ void SensorManager::checkEnvironmentAlerts() {
     }
 }
 
-AlertType SensorManager::evaluateEnvironment() {
+AlertType SensorManager::evaluateEnvironment() const {
     if (!environmentData.valid) return ALERT_NONE;
     
     if (environmentData.temperature < tempMinAlert) {

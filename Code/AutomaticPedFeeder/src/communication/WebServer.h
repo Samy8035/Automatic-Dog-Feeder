@@ -4,12 +4,13 @@
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
-#include <LittleFS.h>
+#include <LITTLEFS.h>
 #include "../config.h"
 #include "../feeding/FeedingLogic.h"
 #include "../hardware/StepperController.h"
 #include "../hardware/SensorManager.h"
 #include "../hardware/CameraController.h"
+#include "WiFi.h"
 
 class WebServerManager {
 private:

@@ -98,7 +98,7 @@ bool StepperController::calibrate() {
     return true;
 }
 
-float StepperController::getProgress() const {
+float StepperController::getProgress() {
     if (state != MOTOR_MOVING) return 100.0;
     
     long totalSteps = abs(targetPosition - stepper.currentPosition());
@@ -109,7 +109,7 @@ float StepperController::getProgress() const {
     return 100.0 * (1.0 - (float)remainingSteps / totalSteps);
 }
 
-long StepperController::getStepsToTarget() const {
+long StepperController::getStepsToTarget() {
     return stepper.distanceToGo();
 }
 
