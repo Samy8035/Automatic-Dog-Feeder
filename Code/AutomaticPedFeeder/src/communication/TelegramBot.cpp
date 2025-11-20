@@ -7,7 +7,7 @@ TelegramBotManager::TelegramBotManager(FeedingLogic* feeding, StepperController*
       sensorManager(sensors),
       cameraController(camera),
       bot(nullptr),
-      allowedChatId(0),
+      allowedUserIds(),
       lastUpdateTime(0),
       initialized(false) {
 }
@@ -18,9 +18,9 @@ TelegramBotManager::~TelegramBotManager() {
     }
 }
 
-bool TelegramBotManager::begin(const String& token, long chatId) {
+bool TelegramBotManager::begin(const String& token, const std::vector<long long>& userIds) {
     botToken = token;
-    allowedChatId = chatId;
+    allowedUserIds = userIds;
     
     client.setCACert(TELEGRAM_CERTIFICATE_ROOT);
     bot = new UniversalTelegramBot(botToken, client);
@@ -48,14 +48,16 @@ void TelegramBotManager::update() {
 
 void TelegramBotManager::handleNewMessages(int numNewMessages) {
     for (int i = 0; i < numNewMessages; i++) {
-        String chatId = String(bot->messages[i].chat_id);
         String text = bot->messages[i].text;
-        
-        if (!isAuthorized(chatId)) {
-            bot->sendMessage(chatId, "❌ No autorizado", "");
+        String chatId = String(bot->messages[i].chat_id);
+        String userIdStr = bot->messages[i].from_id;
+        long long userId = strtoll(userIdStr.c_str(), NULL, 10);
+
+        if (!isUserAuthorized(userId)) {
+            bot->sendMessage(chatId, "❌ No autorizado. Tu User ID es: " + userIdStr, "");
             continue;
         }
-        
+
         lastMessageChatId = chatId;
         
         if (text.startsWith("/")) {
@@ -254,9 +256,18 @@ void TelegramBotManager::cmdHelp(const String& chatId) {
     bot->sendMessage(chatId, help, "Markdown");
 }
 
-bool TelegramBotManager::isAuthorized(const String& chatId) {
-    if (allowedChatId == 0) return true;
-    return chatId.toInt() == allowedChatId;
+bool TelegramBotManager::isUserAuthorized(long long userId) {
+    if (allowedUserIds.empty()) {
+        return true;
+    }
+    
+    for (long long id : allowedUserIds) {
+        if (id == userId) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 void TelegramBotManager::sendMessage(const String& message) {

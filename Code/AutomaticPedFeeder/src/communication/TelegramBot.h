@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <WiFiClientSecure.h>
 #include <UniversalTelegramBot.h>
+#include <vector>
 #include "../config.h"
 #include "../feeding/FeedingLogic.h"
 #include "../hardware/StepperController.h"
@@ -23,7 +24,7 @@ private:
     
     // Configuración
     String botToken;
-    long allowedChatId;
+    std::vector<long long> allowedUserIds;
     unsigned long lastUpdateTime;
     const unsigned long UPDATE_INTERVAL = 1000; // 1 segundo
     
@@ -37,7 +38,7 @@ public:
     ~TelegramBotManager();
     
     // Inicialización
-    bool begin(const String& token, long chatId = 0);
+    bool begin(const String& token, const std::vector<long long>& userIds = {});
     void update();
     
     // Envío de mensajes
@@ -64,7 +65,7 @@ private:
     void cmdHelp(const String& chatId);
     
     // Utilidades
-    bool isAuthorized(const String& chatId);
+    bool isUserAuthorized(long long userId);
     String getKeyboard();
 };
 

@@ -28,7 +28,7 @@ FeederConfig ConfigManager::loadConfig() {
     
     config.telegramEnabled = getBool("tgEnabled", true);
     config.botToken = getString("botToken", BOT_TOKEN);
-    config.allowedChatId = getLong("chatId", ALLOWED_CHAT_ID);
+    config.allowedUserIds = ALLOWED_USER_IDS;
     
     config.cameraEnabled = getBool("camEnabled", true);
     config.cameraQuality = getInt("camQuality", 10);
@@ -62,7 +62,6 @@ bool ConfigManager::saveConfig(const FeederConfig& config) {
     
     saveBool("tgEnabled", config.telegramEnabled);
     saveString("botToken", config.botToken);
-    saveLong("chatId", config.allowedChatId);
     
     saveBool("camEnabled", config.cameraEnabled);
     saveInt("camQuality", config.cameraQuality);
@@ -153,7 +152,7 @@ FeederConfig ConfigManager::getDefaultConfig() {
     
     config.telegramEnabled = true;
     config.botToken = BOT_TOKEN;
-    config.allowedChatId = ALLOWED_CHAT_ID;
+    config.allowedUserIds = ALLOWED_USER_IDS;
     
     config.cameraEnabled = true;
     config.cameraQuality = 10;

@@ -1,6 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <vector>
 #include <Arduino.h>
 
 // ========== CONFIGURACIÓN DE HARDWARE ==========
@@ -75,14 +76,16 @@
 
 // ========== CONFIGURACIÓN DE RED ==========
 
-#define WIFI_SSID "TU_WIFI_SSID"
-#define WIFI_PASSWORD "TU_WIFI_PASSWORD"
+#define WIFI_SSID "Livebox6-9F30"
+#define WIFI_PASSWORD "wifiabajo1"
 #define WEB_SERVER_PORT 80
 
 // Telegram Bot
-#define BOT_TOKEN "TU_BOT_TOKEN_AQUI"
-#define ALLOWED_CHAT_ID 0  // ID del chat autorizado (0 = todos)
-
+#define BOT_TOKEN "8577925450:AAHMFKKzGKn7qwaniI-fLW2V2wSMezvwVzg"
+const std::vector<long long> ALLOWED_USER_IDS = {
+    5378096763LL,     // Tu usuario
+    // Agrega más IDs aquí si necesitas
+};
 // ========== CONFIGURACIÓN DE ALMACENAMIENTO ==========
 
 #define PREFS_NAMESPACE "feeder"
@@ -117,7 +120,7 @@ struct FeederConfig {
     // Telegram
     bool telegramEnabled;
     String botToken;
-    long allowedChatId;
+    std::vector<long long> allowedUserIds;
     
     // Cámara
     bool cameraEnabled;

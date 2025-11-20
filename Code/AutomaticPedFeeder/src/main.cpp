@@ -162,7 +162,7 @@ void setup() {
     
     // Inicializar bot de Telegram
     if (globalConfig.telegramEnabled) {
-        telegramBot.begin(globalConfig.botToken, globalConfig.allowedChatId);
+        telegramBot.begin(globalConfig.botToken, globalConfig.allowedUserIds);
         logger.info("✓ Bot de Telegram inicializado");
         telegramBot.sendMessage("🐕 Comedero automático iniciado y listo");
     }
