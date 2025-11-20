@@ -4,81 +4,52 @@ void TimeUtils::init() {
     setenv("TZ", "CET-1CEST,M3.5.0/2,M10.5.0/3", 1);
     tzset();
     
-    // Iniciar sincronización sin bloquear
-    configTime(0, 0, "pool.ntp.org", "time.nist.gov", "time.google.com");
+    configTime(0, 0, "pool.ntp.org", "time.nist.gov");
     
-    // Intentar sincronizar de forma no bloqueante
+    // Esperar hasta 5 segundos por sincronización
     struct tm timeinfo;
-    for (int i = 0; i < 10; i++) {  // Máximo 5 segundos
-        if (getLocalTime(&timeinfo)) {
-            return;  // Sincronizado
+    for (int i = 0; i < 10; i++) {
+        if (getLocalTime(&timeinfo) && timeinfo.tm_year > (2020 - 1900)) {
+            return;  // Sincronizado exitosamente
         }
         delay(500);
     }
-    // Continuar sin bloquear - la sincronización seguirá en background
 }
 
-// ✅ Agregar método para verificar si NTP está sincronizado
 bool TimeUtils::isSynced() {
     struct tm timeinfo;
-    if (!getLocalTimeSafe(timeinfo)) return false;
-    return timeinfo.tm_year > (2020 - 1900);  // Año válido
+    return getLocalTime(&timeinfo) && timeinfo.tm_year > (2020 - 1900);
 }
 
 bool TimeUtils::getLocalTimeSafe(struct tm &timeinfo) {
-    if (getLocalTime(&timeinfo)) {
-        return true;
-    }
-    return false;
+    return getLocalTime(&timeinfo);
 }
 
 int TimeUtils::getCurrentDay() {
-    struct tm timeinfo;
-    if (getLocalTimeSafe(timeinfo)) return timeinfo.tm_mday;
-    return -1;
+    struct tm t;
+    return getLocalTimeSafe(t) ? t.tm_mday : -1;
 }
 
 int TimeUtils::getCurrentHour() {
-    struct tm timeinfo;
-    if (getLocalTimeSafe(timeinfo)) return timeinfo.tm_hour;
-    return -1;
-}
-
-int TimeUtils::getCurrentMinute() {
-    struct tm timeinfo;
-    if (getLocalTimeSafe(timeinfo)) return timeinfo.tm_min;
-    return -1;
-}
-
-int TimeUtils::getCurrentSecond() {
-    struct tm timeinfo;
-    if (getLocalTimeSafe(timeinfo)) return timeinfo.tm_sec;
-    return -1;
-}
-
-unsigned long TimeUtils::getUnixTime() {
-    struct tm timeinfo;
-    if (getLocalTimeSafe(timeinfo)) {
-        return mktime(&timeinfo);
-    }
-    return 0;
+    struct tm t;
+    return getLocalTimeSafe(t) ? t.tm_hour : -1;
 }
 
 String TimeUtils::getTimeString() {
-    struct tm timeinfo;
-    if (getLocalTimeSafe(timeinfo)) {
-        char buffer[16];
-        strftime(buffer, sizeof(buffer), "%H:%M:%S", &timeinfo);
-        return String(buffer);
+    struct tm t;
+    if (getLocalTimeSafe(t)) {
+        char buf[16];
+        strftime(buf, sizeof(buf), "%H:%M:%S", &t);
+        return String(buf);
     }
     return "00:00:00";
 }
 
-String TimeUtils::timeAgo(unsigned long pastUnixTime) {
+String TimeUtils::timeAgo(unsigned long past) {
     unsigned long now = getUnixTime();
-    if (now == 0 || pastUnixTime == 0) return "desconocido";
+    if (now == 0 || past == 0) return "?";
 
-    unsigned long diff = now - pastUnixTime;
+    unsigned long diff = now - past;
 
     if (diff < 60) return String(diff) + "s";
     if (diff < 3600) return String(diff / 60) + "m";

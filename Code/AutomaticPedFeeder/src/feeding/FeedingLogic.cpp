@@ -4,23 +4,13 @@ FeedingLogic::FeedingLogic(StepperController *stepper, SensorManager *sensors)
     : stepperController(stepper),
       sensorManager(sensors),
       currentState(FEEDING_IDLE),
-      previousState(FEEDING_IDLE),
       stateStartTime(0),
       soundEnabled(true),
       presenceRequired(true),
       maxWaitTimeMs(MAX_WAIT_TIME_AFTER_SOUND),
       feedingDurationMs(FEEDING_DURATION),
-      feedingCompleteCallback(nullptr),
-      feedingErrorCallback(nullptr),
-      stateChangeCallback(nullptr),
       targetCompartment(FEEDING_COMPARTMENT),
-      feedingInProgress(false),
-      lastError("")
-{
-    if (!stepperController || !sensorManager)
-    {
-        lastError = "Error: punteros nulos en constructor";
-    }
+      feedingInProgress(false) {
 }
 
 void FeedingLogic::begin() {
@@ -28,38 +18,61 @@ void FeedingLogic::begin() {
 }
 
 void FeedingLogic::update() {
+    if (!stepperController || !sensorManager) return;
+    
     switch (currentState) {
         case FEEDING_IDLE:
-            handleIdleState();
             break;
+            
         case FEEDING_SOUND_ALERT:
-            handleSoundAlertState();
+            sensorManager->playFeedingAlert();
+            setState(presenceRequired ? FEEDING_WAITING_PRESENCE : FEEDING_MOVING_CAROUSEL);
             break;
+            
         case FEEDING_WAITING_PRESENCE:
-            handleWaitingPresenceState();
+            if (sensorManager->isPresenceDetected()) {
+                setState(FEEDING_MOVING_CAROUSEL);
+            } else if (getStateElapsedTime() > maxWaitTimeMs) {
+                completeFeedingError("Timeout: mascota no detectada");
+            }
             break;
+            
         case FEEDING_MOVING_CAROUSEL:
-            handleMovingCarouselState();
+            if (!stepperController->isMotorMoving()) {
+                if (stepperController->getCurrentCompartment() == targetCompartment) {
+                    setState(FEEDING_DISPENSING);
+                } else {
+                    stepperController->moveToCompartment(targetCompartment);
+                }
+            }
             break;
+            
         case FEEDING_DISPENSING:
-            handleDispensingState();
+            if (getStateElapsedTime() >= feedingDurationMs) {
+                setState(FEEDING_RETURNING);
+            }
             break;
+            
         case FEEDING_RETURNING:
-            handleReturningState();
+            if (!stepperController->isMotorMoving()) {
+                int nextComp = (targetCompartment + 1) % TOTAL_COMPARTMENTS;
+                if (stepperController->getCurrentCompartment() == nextComp) {
+                    completeFeedingSuccess();
+                } else {
+                    stepperController->moveToCompartment(nextComp);
+                }
+            }
             break;
+            
         case FEEDING_COMPLETE:
-            handleCompleteState();
-            break;
         case FEEDING_ERROR:
-            handleErrorState();
+            setState(FEEDING_IDLE);
             break;
     }
 }
 
 bool FeedingLogic::startFeeding() {
-    if (feedingInProgress) {
-        return false;
-    }
+    if (feedingInProgress) return false;
     
     feedingInProgress = true;
     
@@ -75,20 +88,20 @@ bool FeedingLogic::startFeeding() {
 }
 
 bool FeedingLogic::startFeedingManual() {
+    bool wasRequired = presenceRequired;
     presenceRequired = false;
     bool result = startFeeding();
-    presenceRequired = true;
+    presenceRequired = wasRequired;
     return result;
 }
 
 void FeedingLogic::cancelFeeding() {
-    stepperController->stopMotor();
-    completeFeedingError("Alimentación cancelada por usuario");
+    if (stepperController) stepperController->stopMotor();
+    completeFeedingError("Cancelado por usuario");
 }
 
 void FeedingLogic::setState(FeedingState newState) {
     if (currentState != newState) {
-        previousState = currentState;
         currentState = newState;
         stateStartTime = millis();
         
@@ -96,83 +109,6 @@ void FeedingLogic::setState(FeedingState newState) {
             stateChangeCallback(newState);
         }
     }
-}
-
-void FeedingLogic::handleIdleState() {
-    // Espera inicio de alimentación
-}
-
-void FeedingLogic::handleSoundAlertState() {
-    if (sensorManager) {
-        sensorManager->playFeedingAlert();
-    }
-    
-    if (presenceRequired) {
-        setState(FEEDING_WAITING_PRESENCE);
-    } else {
-        setState(FEEDING_MOVING_CAROUSEL);
-    }
-}
-
-void FeedingLogic::handleWaitingPresenceState() {
-    if (sensorManager) {
-        sensorManager->update();
-        
-        if (sensorManager->isPresenceDetected()) {
-            setState(FEEDING_MOVING_CAROUSEL);
-            return;
-        }
-    }
-    
-    if (getStateElapsedTime() > maxWaitTimeMs) {
-        completeFeedingError("Timeout: mascota no detectada");
-    }
-}
-
-void FeedingLogic::handleMovingCarouselState() {
-    if (!stepperController) {
-        completeFeedingError("Error: controlador de motor no disponible");
-        return;
-    }
-    
-    if (!stepperController->isMotorMoving()) {
-        if (stepperController->getCurrentCompartment() == targetCompartment) {
-            setState(FEEDING_DISPENSING);
-        } else {
-            stepperController->moveToCompartment(targetCompartment);
-        }
-    }
-}
-
-void FeedingLogic::handleDispensingState() {
-    if (getStateElapsedTime() >= feedingDurationMs) {
-        setState(FEEDING_RETURNING);
-    }
-}
-
-
-void FeedingLogic::handleReturningState() {
-    if (!stepperController) {
-        completeFeedingError("Error: controlador de motor no disponible");
-        return;
-    }
-    
-    if (!stepperController->isMotorMoving()) {
-        int nextCompartment = (targetCompartment + 1) % TOTAL_COMPARTMENTS;
-        if (stepperController->getCurrentCompartment() == nextCompartment) {
-            completeFeedingSuccess();
-        } else {
-            stepperController->moveToCompartment(nextCompartment);
-        }
-    }
-}
-
-void FeedingLogic::handleCompleteState() {
-    setState(FEEDING_IDLE);
-}
-
-void FeedingLogic::handleErrorState() {
-    setState(FEEDING_IDLE);
 }
 
 void FeedingLogic::completeFeedingSuccess() {
@@ -203,17 +139,12 @@ unsigned long FeedingLogic::getStateElapsedTime() const {
 }
 
 String FeedingLogic::getStateString() const {
-    switch (currentState) {
-        case FEEDING_IDLE: return "Inactivo";
-        case FEEDING_SOUND_ALERT: return "Reproduciendo alerta";
-        case FEEDING_WAITING_PRESENCE: return "Esperando presencia";
-        case FEEDING_MOVING_CAROUSEL: return "Moviendo carrusel";
-        case FEEDING_DISPENSING: return "Dispensando comida";
-        case FEEDING_RETURNING: return "Regresando posición";
-        case FEEDING_COMPLETE: return "Completado";
-        case FEEDING_ERROR: return "Error";
-        default: return "Desconocido";
-    }
+    const char* states[] = {
+        "Inactivo", "Reproduciendo alerta", "Esperando presencia",
+        "Moviendo carrusel", "Dispensando comida", "Regresando posición",
+        "Completado", "Error"
+    };
+    return states[currentState];
 }
 
 float FeedingLogic::getFeedingProgress() const {

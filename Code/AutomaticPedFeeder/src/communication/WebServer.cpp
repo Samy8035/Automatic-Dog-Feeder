@@ -167,7 +167,6 @@ void WebServerManager::handleCancelFeeding(AsyncWebServerRequest* request) {
 }
 
 void WebServerManager::handleSaveSchedule(AsyncWebServerRequest* request, const String& body) {
-    // ✅ Validar punteros antes de usar
     if (!feedingScheduler || !configManager) {
         sendJSONResponse(request, false, "Error interno del servidor");
         return;
@@ -183,25 +182,24 @@ void WebServerManager::handleSaveSchedule(AsyncWebServerRequest* request, const 
     
     if (doc.containsKey("autoEnabled")) {
         globalConfig.autoFeedingEnabled = doc["autoEnabled"];
-        feedingScheduler->setEnabled(globalConfig.autoFeedingEnabled);  // ✅ Usar puntero
+        feedingScheduler->setEnabled(globalConfig.autoFeedingEnabled);
     }
     
     if (doc.containsKey("feedingInterval")) {
         globalConfig.feedingIntervalHours = doc["feedingInterval"];
-        feedingScheduler->setFeedingInterval(globalConfig.feedingIntervalHours);  // ✅ Usar puntero
+        feedingScheduler->setFeedingInterval(globalConfig.feedingIntervalHours);
     }
     
     if (doc.containsKey("portionsPerDay")) {
         globalConfig.portionsPerDay = doc["portionsPerDay"];
-        feedingScheduler->setMaxFeedingsPerDay(globalConfig.portionsPerDay);  // ✅ Usar puntero
+        feedingScheduler->setMaxFeedingsPerDay(globalConfig.portionsPerDay);
     }
     
-    configManager->saveConfig(globalConfig);  // ✅ Usar puntero
+    configManager->saveConfig(globalConfig);
     sendJSONResponse(request, true, "Configuración guardada");
 }
 
 void WebServerManager::handleSaveAdvancedConfig(AsyncWebServerRequest* request, const String& body) {
-    // ✅ Validar punteros antes de usar
     if (!feedingLogic || !configManager) {
         sendJSONResponse(request, false, "Error interno del servidor");
         return;
@@ -233,19 +231,19 @@ void WebServerManager::handleSaveAdvancedConfig(AsyncWebServerRequest* request, 
         globalConfig.enableHumidityAlerts = doc["humidityAlerts"];
     }
     
-    configManager->saveConfig(globalConfig);  // ✅ Usar puntero
+    configManager->saveConfig(globalConfig);
     sendJSONResponse(request, true, "Configuración guardada");
 }
 
 void WebServerManager::handleResetDaily(AsyncWebServerRequest* request) {
-    if (!feedingScheduler || !configManager) {  // ✅ Validar
+    if (!feedingScheduler || !configManager) {
         sendJSONResponse(request, false, "Error interno del servidor");
         return;
     }
     
     globalConfig.feedingsToday = 0;
-    feedingScheduler->resetDailyCount();  // ✅ Usar puntero
-    configManager->saveConfig(globalConfig);  // ✅ Guardar cambios
+    feedingScheduler->resetDailyCount();
+    configManager->saveConfig(globalConfig);
     sendJSONResponse(request, true, "Contador reiniciado");
 }
 

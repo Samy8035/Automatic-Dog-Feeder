@@ -8,34 +8,20 @@ SensorManager::SensorManager()
       humidityMaxAlert(HUMIDITY_MAX_ALERT),
       lastDHTRead(0),
       lastPIRCheck(0),
-      presenceCallback(nullptr),
-      environmentAlertCallback(nullptr),
       lastPIRState(false),
       presenceStartTime(0),
       lastAlert(ALERT_NONE) {
     
-    environmentData.temperature = 0;
-    environmentData.humidity = 0;
-    environmentData.lastUpdate = 0;
-    environmentData.valid = false;
-    
-    presenceData.isDetected = false;
-    presenceData.lastDetectionTime = 0;
-    presenceData.detectionDuration = 0;
+    environmentData = {0, 0, 0, false};
+    presenceData = {false, 0, 0};
 }
 
 bool SensorManager::begin() {
-    // Inicializar DHT22
     dht.begin();
-    
-    // Configurar PIR
     pinMode(PIR_PIN, INPUT);
-    
-    // Configurar Buzzer
     pinMode(BUZZER_PIN, OUTPUT);
     digitalWrite(BUZZER_PIN, LOW);
     
-    // Primera lectura del DHT
     delay(2000);
     updateDHT();
     
@@ -43,22 +29,22 @@ bool SensorManager::begin() {
 }
 
 void SensorManager::update() {
-    unsigned long currentTime = millis();
+    unsigned long now = millis();
     
-    // Actualizar DHT22
-    if (currentTime - lastDHTRead >= DHT_READ_INTERVAL) {
+    // DHT22 cada 2 segundos
+    if (now - lastDHTRead >= DHT_READ_INTERVAL) {
         updateDHT();
-        lastDHTRead = currentTime;
+        lastDHTRead = now;
         
         if (alertsEnabled) {
             checkEnvironmentAlerts();
         }
     }
     
-    // Actualizar PIR
-    if (currentTime - lastPIRCheck >= PIR_CHECK_INTERVAL) {
+    // PIR cada 100ms
+    if (now - lastPIRCheck >= PIR_CHECK_INTERVAL) {
         updatePIR();
-        lastPIRCheck = currentTime;
+        lastPIRCheck = now;
     }
 }
 
@@ -66,62 +52,53 @@ void SensorManager::updateDHT() {
     float temp = dht.readTemperature();
     float hum = dht.readHumidity();
     
-    if (!isnan(temp) && !isnan(hum)) {
+    environmentData.valid = (!isnan(temp) && !isnan(hum));
+    
+    if (environmentData.valid) {
         environmentData.temperature = temp;
         environmentData.humidity = hum;
         environmentData.lastUpdate = millis();
-        environmentData.valid = true;
-    } else {
-        environmentData.valid = false;
     }
 }
 
 void SensorManager::updatePIR() {
-    bool currentState = digitalRead(PIR_PIN);
+    bool current = digitalRead(PIR_PIN);
     
-    if (currentState && !lastPIRState) {
-        // Detección iniciada
+    if (current && !lastPIRState) {
+        // Inicio de detección
         presenceData.isDetected = true;
         presenceData.lastDetectionTime = millis();
         presenceStartTime = millis();
         
-        if (presenceCallback) {
-            presenceCallback();
-        }
-    } else if (!currentState && lastPIRState) {
-        // Detección terminada
+        if (presenceCallback) presenceCallback();
+        
+    } else if (!current && lastPIRState) {
+        // Fin de detección
         presenceData.detectionDuration = millis() - presenceStartTime;
     }
     
-    presenceData.isDetected = currentState;
-    lastPIRState = currentState;
+    presenceData.isDetected = current;
+    lastPIRState = current;
 }
 
 void SensorManager::checkEnvironmentAlerts() {
-    AlertType currentAlert = evaluateEnvironment();
+    AlertType alert = evaluateEnvironment();
     
-    if (currentAlert != ALERT_NONE && currentAlert != lastAlert) {
+    if (alert != ALERT_NONE && alert != lastAlert) {
         if (environmentAlertCallback) {
-            environmentAlertCallback(getAlertMessage(currentAlert));
+            environmentAlertCallback(getAlertMessage(alert));
         }
-        lastAlert = currentAlert;
-    } else if (currentAlert == ALERT_NONE) {
-        lastAlert = ALERT_NONE;
     }
+    
+    lastAlert = alert;
 }
 
 AlertType SensorManager::evaluateEnvironment() const {
     if (!environmentData.valid) return ALERT_NONE;
     
-    if (environmentData.temperature < tempMinAlert) {
-        return ALERT_TEMP_LOW;
-    }
-    if (environmentData.temperature > tempMaxAlert) {
-        return ALERT_TEMP_HIGH;
-    }
-    if (environmentData.humidity > humidityMaxAlert) {
-        return ALERT_HUMIDITY_HIGH;
-    }
+    if (environmentData.temperature < tempMinAlert) return ALERT_TEMP_LOW;
+    if (environmentData.temperature > tempMaxAlert) return ALERT_TEMP_HIGH;
+    if (environmentData.humidity > humidityMaxAlert) return ALERT_HUMIDITY_HIGH;
     
     return ALERT_NONE;
 }
@@ -129,40 +106,29 @@ AlertType SensorManager::evaluateEnvironment() const {
 String SensorManager::getAlertMessage(AlertType alert) {
     switch (alert) {
         case ALERT_TEMP_LOW:
-            return "Temperatura baja: " + String(environmentData.temperature, 1) + "°C";
+            return "⚠️ Temp baja: " + String(environmentData.temperature, 1) + "°C";
         case ALERT_TEMP_HIGH:
-            return "Temperatura alta: " + String(environmentData.temperature, 1) + "°C";
+            return "⚠️ Temp alta: " + String(environmentData.temperature, 1) + "°C";
         case ALERT_HUMIDITY_HIGH:
-            return "Humedad alta: " + String(environmentData.humidity, 1) + "%";
+            return "⚠️ Humedad alta: " + String(environmentData.humidity, 1) + "%";
         default:
             return "";
     }
 }
 
-EnvironmentData SensorManager::getEnvironmentData() {
-    return environmentData;
-}
-
-PresenceData SensorManager::getPresenceData() {
-    return presenceData;
-}
-
-bool SensorManager::isPresenceDetected() {
-    return presenceData.isDetected;
-}
-
 bool SensorManager::waitForPresence(unsigned long timeoutMs) {
-    unsigned long startTime = millis();
+    unsigned long start = millis();
     
-    while (millis() - startTime < timeoutMs) {
+    while (millis() - start < timeoutMs) {
         update();
+        
         if (isPresenceDetected()) {
-            delay(PIR_DETECTION_TIMEOUT); // Confirmar presencia estable
+            delay(PIR_DETECTION_TIMEOUT);
             update();
-            if (isPresenceDetected()) {
-                return true;
-            }
+            
+            if (isPresenceDetected()) return true;
         }
+        
         delay(100);
     }
     
@@ -171,31 +137,22 @@ bool SensorManager::waitForPresence(unsigned long timeoutMs) {
 
 String SensorManager::getEnvironmentStatus() const {
     if (!environmentData.valid) {
-        return "Sensores: Sin datos válidos";
+        return "Sensores: Sin datos";
     }
     
     String status = "Temp: " + String(environmentData.temperature, 1) + "°C | ";
     status += "Hum: " + String(environmentData.humidity, 1) + "%";
     
-    if (!isEnvironmentOk()) {
-        status += " [ALERTA]";
-    }
+    if (!isEnvironmentOk()) status += " [ALERTA]";
     
     return status;
 }
 
-bool SensorManager::isEnvironmentOk() const {
-    return evaluateEnvironment() == ALERT_NONE;
-}
-
-void SensorManager::playSound(int frequency, int duration, int repetitions) {
-    for (int i = 0; i < repetitions; i++) {
-        tone(BUZZER_PIN, frequency, duration);
+void SensorManager::playSound(int freq, int duration, int reps) {
+    for (int i = 0; i < reps; i++) {
+        tone(BUZZER_PIN, freq, duration);
         delay(duration);
-        
-        if (i < repetitions - 1) {
-            delay(SOUND_PAUSE);
-        }
+        if (i < reps - 1) delay(SOUND_PAUSE);
     }
     noTone(BUZZER_PIN);
 }

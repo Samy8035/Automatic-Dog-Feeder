@@ -197,37 +197,47 @@ int TelegramBotManager::photoResetCallback() {
     return 0;
 }
 
+// Reemplazar la sección de cmdPhoto con esta versión simplificada:
+
 void TelegramBotManager::cmdPhoto(const String& chatId) {
     if (!cameraController->isInitialized()) {
-        bot->sendMessage(chatId, "❌ Cámara no inicializada", "");
+        bot->sendMessage(chatId, "❌ Cámara no disponible", "");
         return;
     }
 
-    bot->sendMessage(chatId, "📸 Capturando foto...", "");
+    bot->sendMessage(chatId, "📸 Capturando...", "");
 
-    currentPhoto.buffer = cameraController->capturePhoto(&currentPhoto.size);
-    currentPhoto.index = 0;
+    size_t photoSize;
+    uint8_t* photoBuffer = cameraController->capturePhoto(&photoSize);
 
-    if (currentPhoto.buffer && currentPhoto.size > 0) {
-        String res = bot->sendPhotoByBinary(chatId,
-                                           "image/jpeg",
-                                           currentPhoto.size,
-                                           photoMoreDataAvailable,
-                                           photoGetNextByte,
-                                           photoGetNextBuffer,
-                                           photoResetCallback);
-        
-        if (res.length() > 0) {
-            bot->sendMessage(chatId, "✅ Foto enviada", "");
-        } else {
-            bot->sendMessage(chatId, "❌ Error al enviar foto", "");
-        }
-    } else {
-        bot->sendMessage(chatId, "❌ Error al capturar foto", "");
+    if (!photoBuffer || photoSize == 0) {
+        bot->sendMessage(chatId, "❌ Error al capturar", "");
+        return;
     }
 
+    // Preparar datos para callbacks
+    currentPhoto.buffer = photoBuffer;
+    currentPhoto.size = photoSize;
+    currentPhoto.index = 0;
+
+    String result = bot->sendPhotoByBinary(
+        chatId,
+        "image/jpeg",
+        photoSize,
+        photoMoreDataAvailable,
+        photoGetNextByte,
+        photoGetNextBuffer,
+        photoResetCallback
+    );
+
     cameraController->releaseFrameBuffer();
-    currentPhoto.reset(); // Limpiar datos
+    currentPhoto.reset();
+
+    if (result.length() > 0) {
+        bot->sendMessage(chatId, "✅ Foto enviada", "");
+    } else {
+        bot->sendMessage(chatId, "❌ Error al enviar", "");
+    }
 }
 
 

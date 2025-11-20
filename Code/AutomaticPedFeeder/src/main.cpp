@@ -205,28 +205,24 @@ void loop() {
     // Reset diario del contador de alimentaciones
     // En el inicio del loop():
     static int lastDay = TimeUtils::getCurrentDay(); // ✅ Inicializar con valor real
-    static bool dailyResetEnabled = (lastDay != -1);
-
-    if (dailyResetEnabled)
-    {
-        int currentDay = TimeUtils::getCurrentDay();
-        if (currentDay != -1 && currentDay != lastDay)
-        {
+    static bool resetEnabled = (lastDay != -1);
+    
+    if (resetEnabled) {
+        int today = TimeUtils::getCurrentDay();
+        
+        if (today != -1 && today != lastDay) {
             globalConfig.feedingsToday = 0;
             feedingScheduler.resetDailyCount();
             configManager.saveConfig(globalConfig);
-            lastDay = currentDay;
+            lastDay = today;
             logger.info("Nuevo día - contador reiniciado");
         }
-    }
-    else
-    {
-        // Intentar habilitar si NTP se sincroniza después
-        int currentDay = TimeUtils::getCurrentDay();
-        if (currentDay != -1)
-        {
-            lastDay = currentDay;
-            dailyResetEnabled = true;
+    } else {
+        // Habilitar cuando NTP se sincronice
+        int today = TimeUtils::getCurrentDay();
+        if (today != -1) {
+            lastDay = today;
+            resetEnabled = true;
             logger.info("NTP sincronizado - reset diario activado");
         }
     }
