@@ -82,9 +82,11 @@ camera_config_t CameraController::getCameraConfig() {
         config.jpeg_quality = quality;
         config.fb_count = 2;
     } else {
-        config.frame_size = FRAMESIZE_SVGA;
-        config.jpeg_quality = 12;
-        config.fb_count = 1;
+        config.frame_size = FRAMESIZE_QVGA;    // 320x240 (~15-25KB por foto)
+        config.jpeg_quality = 12;               // Calidad media (10=mejor, 63=peor)
+        config.fb_count = 1;                    // Solo 1 buffer
+        config.fb_location = CAMERA_FB_IN_DRAM; // usar RAM normal
+        config.grab_mode = CAMERA_GRAB_LATEST;
     }
     
     return config;

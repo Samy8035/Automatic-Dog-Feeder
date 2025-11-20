@@ -180,9 +180,42 @@ void setup() {
     logger.info(sensorManager.getEnvironmentStatus());
 }
 
-// ========== LOOP ==========
+void monitorMemory() {
+    static unsigned long lastReport = 0;
+    static uint32_t minHeap = 363000; // Inicializar con RAM actual
+    
+    if (millis() - lastReport > 10000) {  // Cada 10 segundos
+        uint32_t freeHeap = ESP.getFreeHeap();
+        uint32_t minFreeHeap = ESP.getMinFreeHeap();
+        
+        if (minFreeHeap < minHeap) {
+            minHeap = minFreeHeap;
+        }
+        
+        logger.info("──────────────────────────────");
+        logger.info("RAM Libre:    " + String(freeHeap/1024) + " KB");
+        logger.info("RAM Mínima:   " + String(minHeap/1024) + " KB");
+        logger.info("Fragmentación: " + String(100 - (freeHeap*100)/363000) + "%");
+        
+        // ⚠️ Alerta si queda poca RAM
+        if (freeHeap < 50000) {
+            logger.error("⚠️⚠️⚠️ MEMORIA CRÍTICA ⚠️⚠️⚠️");
+            // Liberar recursos no críticos
+            if (globalConfig.cameraEnabled) {
+                logger.warning("Deshabilitando cámara temporalmente");
+                cameraController.releaseFrameBuffer();
+            }
+        } else if (freeHeap < 100000) {
+            logger.warning("⚠️ Memoria baja");
+        }
+        
+        lastReport = millis();
+    }
+}
 
+// ========== LOOP ==========
 void loop() {
+    monitorMemory();
     // Actualizar todos los módulos
     stepperController.update();
     sensorManager.update();

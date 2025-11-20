@@ -119,20 +119,22 @@ function refreshCamera() {
     const img = document.getElementById('cameraStream');
     const timestamp = new Date().getTime();
     
-    // ✅ Manejar errores de carga
+    // NO auto-refrescar, solo captura manual
+    // Quitar el auto-refresh del stream
+    
     img.onerror = function() {
         showToast('Error al cargar cámara', 'error');
-        // Mostrar placeholder
-        img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><rect width="640" height="480" fill="%23f0f0f0"/><text x="50%" y="50%" text-anchor="middle" fill="%23999" font-size="20">Cámara no disponible</text></svg>';
+        img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="640" height="480"%3E%3Crect width="640" height="480" fill="%23f0f0f0"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23999" font-size="20"%3ECámara no disponible%3C/text%3E%3C/svg%3E';
     };
     
     img.onload = function() {
-        // Quitar handler de error si carga bien
         img.onerror = null;
     };
     
-    img.src = '/camera/stream?' + timestamp;
+    // Solo capturar cuando se presione el botón
+    img.src = '/camera/capture?' + timestamp;
 }
+
 
 async function capturePhoto() {
     showToast('Capturando foto...', 'success');
