@@ -67,6 +67,29 @@ private:
     // Utilidades
     bool isUserAuthorized(long long userId);
     String getKeyboard();
+
+    struct PhotoData {
+        uint8_t* buffer;
+        size_t size;
+        size_t index;
+        
+        PhotoData() : buffer(nullptr), size(0), index(0) {}
+        
+        void reset() {
+            buffer = nullptr;
+            size = 0;
+            index = 0;
+        }
+    };
+    
+    PhotoData currentPhoto;
+    
+    // Callbacks estáticos para Telegram
+    static bool photoMoreDataAvailable();
+    static uint8_t photoGetNextByte();
+    static uint8_t* photoGetNextBuffer();
+    static int photoResetCallback();
+    static TelegramBotManager* instance; // Para callbacks estáticos
 };
 
 #endif // TELEGRAM_BOT_H

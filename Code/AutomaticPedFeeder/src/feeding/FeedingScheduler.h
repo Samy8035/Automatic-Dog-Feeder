@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include "../config.h"
 #include "FeedingLogic.h"
-#include "utils/TimeUtils.h"
+#include "../utils/TimeUtils.h"
 
 
 class FeedingScheduler {

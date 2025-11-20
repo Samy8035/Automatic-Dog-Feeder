@@ -1,6 +1,6 @@
 #include "FeedingLogic.h"
 
-FeedingLogic::FeedingLogic(StepperController* stepper, SensorManager* sensors)
+FeedingLogic::FeedingLogic(StepperController *stepper, SensorManager *sensors)
     : stepperController(stepper),
       sensorManager(sensors),
       currentState(FEEDING_IDLE),
@@ -15,7 +15,12 @@ FeedingLogic::FeedingLogic(StepperController* stepper, SensorManager* sensors)
       stateChangeCallback(nullptr),
       targetCompartment(FEEDING_COMPARTMENT),
       feedingInProgress(false),
-      lastError("") {
+      lastError("")
+{
+    if (!stepperController || !sensorManager)
+    {
+        lastError = "Error: punteros nulos en constructor";
+    }
 }
 
 void FeedingLogic::begin() {
@@ -98,7 +103,9 @@ void FeedingLogic::handleIdleState() {
 }
 
 void FeedingLogic::handleSoundAlertState() {
-    sensorManager->playFeedingAlert();
+    if (sensorManager) {
+        sensorManager->playFeedingAlert();
+    }
     
     if (presenceRequired) {
         setState(FEEDING_WAITING_PRESENCE);
@@ -108,11 +115,13 @@ void FeedingLogic::handleSoundAlertState() {
 }
 
 void FeedingLogic::handleWaitingPresenceState() {
-    sensorManager->update();
-    
-    if (sensorManager->isPresenceDetected()) {
-        setState(FEEDING_MOVING_CAROUSEL);
-        return;
+    if (sensorManager) {
+        sensorManager->update();
+        
+        if (sensorManager->isPresenceDetected()) {
+            setState(FEEDING_MOVING_CAROUSEL);
+            return;
+        }
     }
     
     if (getStateElapsedTime() > maxWaitTimeMs) {
@@ -121,6 +130,11 @@ void FeedingLogic::handleWaitingPresenceState() {
 }
 
 void FeedingLogic::handleMovingCarouselState() {
+    if (!stepperController) {
+        completeFeedingError("Error: controlador de motor no disponible");
+        return;
+    }
+    
     if (!stepperController->isMotorMoving()) {
         if (stepperController->getCurrentCompartment() == targetCompartment) {
             setState(FEEDING_DISPENSING);
@@ -136,7 +150,13 @@ void FeedingLogic::handleDispensingState() {
     }
 }
 
+
 void FeedingLogic::handleReturningState() {
+    if (!stepperController) {
+        completeFeedingError("Error: controlador de motor no disponible");
+        return;
+    }
+    
     if (!stepperController->isMotorMoving()) {
         int nextCompartment = (targetCompartment + 1) % TOTAL_COMPARTMENTS;
         if (stepperController->getCurrentCompartment() == nextCompartment) {

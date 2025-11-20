@@ -99,12 +99,19 @@ bool StepperController::calibrate() {
 }
 
 float StepperController::getProgress() {
-    if (state != MOTOR_MOVING) return 100.0;
+    if (state != MOTOR_MOVING) {
+        return 100.0;
+    }
     
-    long totalSteps = abs(targetPosition - stepper.currentPosition());
     long remainingSteps = abs(stepper.distanceToGo());
+    if (remainingSteps == 0) {
+        return 100.0;
+    }
     
-    if (totalSteps == 0) return 100.0;
+    long totalSteps = abs(targetPosition);
+    if (totalSteps == 0) {
+        return 100.0;
+    }
     
     return 100.0 * (1.0 - (float)remainingSteps / totalSteps);
 }

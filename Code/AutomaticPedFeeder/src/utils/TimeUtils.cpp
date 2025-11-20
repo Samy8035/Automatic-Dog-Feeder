@@ -1,20 +1,28 @@
 #include "TimeUtils.h"
 
 void TimeUtils::init() {
-    // Zona horaria Madrid CET/CEST
     setenv("TZ", "CET-1CEST,M3.5.0/2,M10.5.0/3", 1);
     tzset();
-
-    // Servidores NTP
-    configTime(0, 0, "pool.ntp.org", "time.nist.gov");
-
-    // Esperar un poco para sincronizar (no bloqueante total)
+    
+    // Iniciar sincronización sin bloquear
+    configTime(0, 0, "pool.ntp.org", "time.nist.gov", "time.google.com");
+    
+    // Intentar sincronizar de forma no bloqueante
     struct tm timeinfo;
-    int tries = 0;
-    while (!getLocalTime(&timeinfo) && tries < 20) {
+    for (int i = 0; i < 10; i++) {  // Máximo 5 segundos
+        if (getLocalTime(&timeinfo)) {
+            return;  // Sincronizado
+        }
         delay(500);
-        tries++;
     }
+    // Continuar sin bloquear - la sincronización seguirá en background
+}
+
+// ✅ Agregar método para verificar si NTP está sincronizado
+bool TimeUtils::isSynced() {
+    struct tm timeinfo;
+    if (!getLocalTimeSafe(timeinfo)) return false;
+    return timeinfo.tm_year > (2020 - 1900);  // Año válido
 }
 
 bool TimeUtils::getLocalTimeSafe(struct tm &timeinfo) {

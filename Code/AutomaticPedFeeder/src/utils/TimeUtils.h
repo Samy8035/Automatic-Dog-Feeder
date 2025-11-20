@@ -18,6 +18,7 @@ public:
     static int getCurrentHour();       // Hora 0–23
     static int getCurrentMinute();     // Minuto 0–59
     static int getCurrentSecond();     // Segundo 0–59
+    static bool isSynced();
 
     // Tiempos tipo UNIX
     static unsigned long getUnixTime();  // Timestamp actual

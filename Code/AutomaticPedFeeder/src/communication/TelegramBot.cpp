@@ -1,5 +1,7 @@
 #include "TelegramBot.h"
 
+TelegramBotManager* TelegramBotManager::instance = nullptr;
+
 TelegramBotManager::TelegramBotManager(FeedingLogic* feeding, StepperController* stepper,
                                        SensorManager* sensors, CameraController* camera)
     : feedingLogic(feeding),
@@ -10,6 +12,7 @@ TelegramBotManager::TelegramBotManager(FeedingLogic* feeding, StepperController*
       allowedUserIds(),
       lastUpdateTime(0),
       initialized(false) {
+    instance = this; // Asignar instancia para callbacks
 }
 
 TelegramBotManager::~TelegramBotManager() {
@@ -67,27 +70,34 @@ void TelegramBotManager::handleNewMessages(int numNewMessages) {
 }
 
 void TelegramBotManager::handleCommand(const String& command, const String& chatId) {
-    if (command == CMD_START) {
+    // Eliminar espacios y @botname si existe
+    String cleanCmd = command;
+    int spacePos = cleanCmd.indexOf(' ');
+    if (spacePos > 0) cleanCmd = cleanCmd.substring(0, spacePos);
+    int atPos = cleanCmd.indexOf('@');
+    if (atPos > 0) cleanCmd = cleanCmd.substring(0, atPos);
+    
+    if (cleanCmd == CMD_START) {
         cmdStart(chatId);
-    } else if (command == CMD_STATUS || command == CMD_STATUS "@") {
+    } else if (cleanCmd == CMD_STATUS) {
         cmdStatus(chatId);
-    } else if (command == CMD_FEED_NOW) {
+    } else if (cleanCmd == CMD_FEED_NOW) {
         cmdFeedNow(chatId);
-    } else if (command == CMD_PHOTO) {
+    } else if (cleanCmd == CMD_PHOTO) {
         cmdPhoto(chatId);
-    } else if (command == CMD_SENSORS) {
+    } else if (cleanCmd == CMD_SENSORS) {
         cmdSensors(chatId);
-    } else if (command == CMD_SCHEDULE) {
+    } else if (cleanCmd == CMD_SCHEDULE) {
         cmdSchedule(chatId);
-    } else if (command == CMD_ENABLE_AUTO) {
+    } else if (cleanCmd == CMD_ENABLE_AUTO) {
         cmdEnableAuto(chatId);
-    } else if (command == CMD_DISABLE_AUTO) {
+    } else if (cleanCmd == CMD_DISABLE_AUTO) {
         cmdDisableAuto(chatId);
-    } else if (command == CMD_REFILL) {
+    } else if (cleanCmd == CMD_REFILL) {
         cmdRefill(chatId);
-    } else if (command == CMD_CONFIG) {
+    } else if (cleanCmd == CMD_CONFIG) {
         cmdConfig(chatId);
-    } else if (command == CMD_HELP) {
+    } else if (cleanCmd == CMD_HELP) {
         cmdHelp(chatId);
     } else {
         bot->sendMessage(chatId, "❓ Comando no reconocido. Usa /ayuda", "");
@@ -164,6 +174,29 @@ int resetCallback() {
     return 0;
 }
 
+// Implementar callbacks estáticos
+bool TelegramBotManager::photoMoreDataAvailable() {
+    return instance && instance->currentPhoto.index < instance->currentPhoto.size;
+}
+
+uint8_t TelegramBotManager::photoGetNextByte() {
+    if (instance && instance->currentPhoto.buffer) {
+        return instance->currentPhoto.buffer[instance->currentPhoto.index++];
+    }
+    return 0;
+}
+
+uint8_t* TelegramBotManager::photoGetNextBuffer() {
+    return nullptr;
+}
+
+int TelegramBotManager::photoResetCallback() {
+    if (instance) {
+        instance->currentPhoto.index = 0;
+    }
+    return 0;
+}
+
 void TelegramBotManager::cmdPhoto(const String& chatId) {
     if (!cameraController->isInitialized()) {
         bot->sendMessage(chatId, "❌ Cámara no inicializada", "");
@@ -172,24 +205,29 @@ void TelegramBotManager::cmdPhoto(const String& chatId) {
 
     bot->sendMessage(chatId, "📸 Capturando foto...", "");
 
-    photoBuffer = cameraController->capturePhoto(&photoSize);
-    photoIndex = 0;
+    currentPhoto.buffer = cameraController->capturePhoto(&currentPhoto.size);
+    currentPhoto.index = 0;
 
-    if (photoBuffer && photoSize > 0) {
+    if (currentPhoto.buffer && currentPhoto.size > 0) {
         String res = bot->sendPhotoByBinary(chatId,
                                            "image/jpeg",
-                                           photoSize,
-                                           moreDataAvailable,
-                                           getNextByte,
-                                           getNextBuffer,
-                                           resetCallback);
-        if (res.length() > 0) bot->sendMessage(chatId, "✅ Foto enviada", "");
-        else                  bot->sendMessage(chatId, "❌ Error al enviar foto", "");
+                                           currentPhoto.size,
+                                           photoMoreDataAvailable,
+                                           photoGetNextByte,
+                                           photoGetNextBuffer,
+                                           photoResetCallback);
+        
+        if (res.length() > 0) {
+            bot->sendMessage(chatId, "✅ Foto enviada", "");
+        } else {
+            bot->sendMessage(chatId, "❌ Error al enviar foto", "");
+        }
     } else {
         bot->sendMessage(chatId, "❌ Error al capturar foto", "");
     }
 
     cameraController->releaseFrameBuffer();
+    currentPhoto.reset(); // Limpiar datos
 }
 
 

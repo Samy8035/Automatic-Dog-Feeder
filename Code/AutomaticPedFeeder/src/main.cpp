@@ -20,9 +20,9 @@ SensorManager sensorManager;
 CameraController cameraController;
 FeedingLogic feedingLogic(&stepperController, &sensorManager);
 FeedingScheduler feedingScheduler(&feedingLogic);
-WebServerManager webServer(&feedingLogic, &stepperController, &sensorManager, &cameraController);
-TelegramBotManager telegramBot(&feedingLogic, &stepperController, &sensorManager, &cameraController);
 ConfigManager configManager;
+WebServerManager webServer(&feedingLogic, &stepperController, &sensorManager, &cameraController, &feedingScheduler, &configManager);
+TelegramBotManager telegramBot(&feedingLogic, &stepperController, &sensorManager, &cameraController);
 Logger logger;
 
 // Configuración global
@@ -201,26 +201,37 @@ void loop() {
         configManager.saveConfig(globalConfig);
         lastConfigSave = millis();
     }
-    
+
     // Reset diario del contador de alimentaciones
-    static int lastDay = -1;
-    int currentDay = TimeUtils::getCurrentDay();
-    if (currentDay != -1)
+    // En el inicio del loop():
+    static int lastDay = TimeUtils::getCurrentDay(); // ✅ Inicializar con valor real
+    static bool dailyResetEnabled = (lastDay != -1);
+
+    if (dailyResetEnabled)
     {
-        if (currentDay != lastDay)
+        int currentDay = TimeUtils::getCurrentDay();
+        if (currentDay != -1 && currentDay != lastDay)
         {
             globalConfig.feedingsToday = 0;
+            feedingScheduler.resetDailyCount();
+            configManager.saveConfig(globalConfig);
             lastDay = currentDay;
-            logger.info("Nuevo día - contador de alimentaciones reiniciado");
+            logger.info("Nuevo día - contador reiniciado");
         }
     }
     else
     {
-        // Si no hay tiempo, opcional: no reiniciamos para evitar falsos positivos.
-        // logger.debug("Hora no disponible, no se reinicia contador diario");
+        // Intentar habilitar si NTP se sincroniza después
+        int currentDay = TimeUtils::getCurrentDay();
+        if (currentDay != -1)
+        {
+            lastDay = currentDay;
+            dailyResetEnabled = true;
+            logger.info("NTP sincronizado - reset diario activado");
+        }
     }
 
-    yield();  // Dar tiempo a otras tareas
+    yield(); // Dar tiempo a otras tareas
 }
 
 // ========== FUNCIONES AUXILIARES ==========

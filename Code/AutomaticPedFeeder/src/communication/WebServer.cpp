@@ -4,12 +4,15 @@
 extern FeederConfig globalConfig;
 
 WebServerManager::WebServerManager(FeedingLogic* feeding, StepperController* stepper,
-                                   SensorManager* sensors, CameraController* camera)
+                                   SensorManager* sensors, CameraController* camera,
+                                   FeedingScheduler* scheduler, ConfigManager* config)
     : server(WEB_SERVER_PORT),
       feedingLogic(feeding),
       stepperController(stepper),
       sensorManager(sensors),
       cameraController(camera),
+      feedingScheduler(scheduler),
+      configManager(config),
       initialized(false) {
 }
 
@@ -73,17 +76,51 @@ void WebServerManager::setupAPIRoutes() {
         handleCancelFeeding(request);
     });
     
-    server.on("/api/config/schedule", HTTP_POST, [this](AsyncWebServerRequest* request) {},
-        nullptr, [this](AsyncWebServerRequest* request, uint8_t* data, size_t len, 
-                       size_t index, size_t total) {
-        handleSaveSchedule(request);
-    });
+    server.on("/api/config/schedule", HTTP_POST,
+        [this](AsyncWebServerRequest* request) {
+            // Respuesta ya enviada en el body handler
+        },
+        nullptr,
+        [this](AsyncWebServerRequest* request, uint8_t* data, size_t len, 
+               size_t index, size_t total) {
+            if (index == 0) {
+                request->_tempObject = new String();
+            }
+            
+            String* body = (String*)request->_tempObject;
+            for (size_t i = 0; i < len; i++) {
+                body->concat((char)data[i]);
+            }
+            
+            if (index + len == total) {
+                handleSaveSchedule(request, *body);
+                delete body;
+                request->_tempObject = nullptr;
+            }
+        }
+    );
     
-    server.on("/api/config/advanced", HTTP_POST, [this](AsyncWebServerRequest* request) {},
-        nullptr, [this](AsyncWebServerRequest* request, uint8_t* data, size_t len,
-                       size_t index, size_t total) {
-        handleSaveAdvancedConfig(request);
-    });
+    server.on("/api/config/advanced", HTTP_POST,
+        [this](AsyncWebServerRequest* request) {},
+        nullptr,
+        [this](AsyncWebServerRequest* request, uint8_t* data, size_t len,
+               size_t index, size_t total) {
+            if (index == 0) {
+                request->_tempObject = new String();
+            }
+            
+            String* body = (String*)request->_tempObject;
+            for (size_t i = 0; i < len; i++) {
+                body->concat((char)data[i]);
+            }
+            
+            if (index + len == total) {
+                handleSaveAdvancedConfig(request, *body);
+                delete body;
+                request->_tempObject = nullptr;
+            }
+        }
+    );
     
     server.on("/api/system/reset-daily", HTTP_POST, [this](AsyncWebServerRequest* request) {
         handleResetDaily(request);
@@ -129,17 +166,86 @@ void WebServerManager::handleCancelFeeding(AsyncWebServerRequest* request) {
     sendJSONResponse(request, true, "Alimentación cancelada");
 }
 
-void WebServerManager::handleSaveSchedule(AsyncWebServerRequest* request) {
-    // Procesar JSON recibido y actualizar configuración
+void WebServerManager::handleSaveSchedule(AsyncWebServerRequest* request, const String& body) {
+    // ✅ Validar punteros antes de usar
+    if (!feedingScheduler || !configManager) {
+        sendJSONResponse(request, false, "Error interno del servidor");
+        return;
+    }
+    
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, body);
+    
+    if (error) {
+        sendJSONResponse(request, false, "JSON inválido");
+        return;
+    }
+    
+    if (doc.containsKey("autoEnabled")) {
+        globalConfig.autoFeedingEnabled = doc["autoEnabled"];
+        feedingScheduler->setEnabled(globalConfig.autoFeedingEnabled);  // ✅ Usar puntero
+    }
+    
+    if (doc.containsKey("feedingInterval")) {
+        globalConfig.feedingIntervalHours = doc["feedingInterval"];
+        feedingScheduler->setFeedingInterval(globalConfig.feedingIntervalHours);  // ✅ Usar puntero
+    }
+    
+    if (doc.containsKey("portionsPerDay")) {
+        globalConfig.portionsPerDay = doc["portionsPerDay"];
+        feedingScheduler->setMaxFeedingsPerDay(globalConfig.portionsPerDay);  // ✅ Usar puntero
+    }
+    
+    configManager->saveConfig(globalConfig);  // ✅ Usar puntero
     sendJSONResponse(request, true, "Configuración guardada");
 }
 
-void WebServerManager::handleSaveAdvancedConfig(AsyncWebServerRequest* request) {
-    sendJSONResponse(request, true, "Configuración avanzada guardada");
+void WebServerManager::handleSaveAdvancedConfig(AsyncWebServerRequest* request, const String& body) {
+    // ✅ Validar punteros antes de usar
+    if (!feedingLogic || !configManager) {
+        sendJSONResponse(request, false, "Error interno del servidor");
+        return;
+    }
+    
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, body);
+    
+    if (error) {
+        sendJSONResponse(request, false, "JSON inválido");
+        return;
+    }
+    
+    if (doc.containsKey("requirePresence")) {
+        globalConfig.requirePresenceDetection = doc["requirePresence"];
+        feedingLogic->requirePresence(globalConfig.requirePresenceDetection);
+    }
+    
+    if (doc.containsKey("playSound")) {
+        globalConfig.soundBeforeFeeding = doc["playSound"];
+        feedingLogic->enableSound(globalConfig.soundBeforeFeeding);
+    }
+    
+    if (doc.containsKey("tempAlerts")) {
+        globalConfig.enableTemperatureAlerts = doc["tempAlerts"];
+    }
+    
+    if (doc.containsKey("humidityAlerts")) {
+        globalConfig.enableHumidityAlerts = doc["humidityAlerts"];
+    }
+    
+    configManager->saveConfig(globalConfig);  // ✅ Usar puntero
+    sendJSONResponse(request, true, "Configuración guardada");
 }
 
 void WebServerManager::handleResetDaily(AsyncWebServerRequest* request) {
+    if (!feedingScheduler || !configManager) {  // ✅ Validar
+        sendJSONResponse(request, false, "Error interno del servidor");
+        return;
+    }
+    
     globalConfig.feedingsToday = 0;
+    feedingScheduler->resetDailyCount();  // ✅ Usar puntero
+    configManager->saveConfig(globalConfig);  // ✅ Guardar cambios
     sendJSONResponse(request, true, "Contador reiniciado");
 }
 

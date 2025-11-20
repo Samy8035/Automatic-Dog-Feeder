@@ -115,16 +115,45 @@ async function cancelFeeding() {
 }
 
 // Cámara
+function refreshCamera() {
+    const img = document.getElementById('cameraStream');
+    const timestamp = new Date().getTime();
+    
+    // ✅ Manejar errores de carga
+    img.onerror = function() {
+        showToast('Error al cargar cámara', 'error');
+        // Mostrar placeholder
+        img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><rect width="640" height="480" fill="%23f0f0f0"/><text x="50%" y="50%" text-anchor="middle" fill="%23999" font-size="20">Cámara no disponible</text></svg>';
+    };
+    
+    img.onload = function() {
+        // Quitar handler de error si carga bien
+        img.onerror = null;
+    };
+    
+    img.src = '/camera/stream?' + timestamp;
+}
+
 async function capturePhoto() {
     showToast('Capturando foto...', 'success');
     
-    const img = document.getElementById('cameraStream');
-    img.src = '/camera/capture?' + new Date().getTime();
-}
-
-function refreshCamera() {
-    const img = document.getElementById('cameraStream');
-    img.src = '/camera/stream?' + new Date().getTime();
+    try {
+        const img = document.getElementById('cameraStream');
+        const timestamp = new Date().getTime();
+        
+        // ✅ Verificar que la captura funcionó
+        const response = await fetch('/camera/capture?' + timestamp);
+        if (!response.ok) {
+            throw new Error('Error al capturar foto');
+        }
+        
+        const blob = await response.blob();
+        img.src = URL.createObjectURL(blob);
+        showToast('Foto capturada', 'success');
+    } catch (error) {
+        showToast('Error al capturar foto', 'error');
+        console.error('Capture error:', error);
+    }
 }
 
 // Configuración

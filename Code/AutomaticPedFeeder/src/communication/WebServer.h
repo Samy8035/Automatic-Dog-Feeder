@@ -7,6 +7,8 @@
 #include <LittleFS.h>
 #include "../config.h"
 #include "../feeding/FeedingLogic.h"
+#include "../feeding/FeedingScheduler.h"
+#include "../storage/ConfigManager.h"
 #include "../hardware/StepperController.h"
 #include "../hardware/SensorManager.h"
 #include "../hardware/CameraController.h"
@@ -21,13 +23,16 @@ private:
     StepperController* stepperController;
     SensorManager* sensorManager;
     CameraController* cameraController;
+    FeedingScheduler* feedingScheduler;
+    ConfigManager* configManager;
     
     // Estado
     bool initialized;
     
 public:
     WebServerManager(FeedingLogic* feeding, StepperController* stepper,
-                     SensorManager* sensors, CameraController* camera);
+                     SensorManager* sensors, CameraController* camera,
+                    FeedingScheduler* scheduler, ConfigManager* config);
     
     // Inicialización
     bool begin();
@@ -45,8 +50,8 @@ private:
     void handleGetConfig(AsyncWebServerRequest* request);
     void handleFeedNow(AsyncWebServerRequest* request);
     void handleCancelFeeding(AsyncWebServerRequest* request);
-    void handleSaveSchedule(AsyncWebServerRequest* request);
-    void handleSaveAdvancedConfig(AsyncWebServerRequest* request);
+    void handleSaveSchedule(AsyncWebServerRequest* request, const String& body);
+    void handleSaveAdvancedConfig(AsyncWebServerRequest* request, const String& body);
     void handleResetDaily(AsyncWebServerRequest* request);
     void handleReboot(AsyncWebServerRequest* request);
     
