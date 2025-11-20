@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>
-#include <LITTLEFS.h>
+#include <LittleFS.h>
 #include "../config.h"
 #include "../feeding/FeedingLogic.h"
 #include "../hardware/StepperController.h"

@@ -20,7 +20,7 @@ void FeedingScheduler::update() {
     if (!enabled) return;
     
     // Verificar cambio de día
-    int currentDay = day(); //!crear un timeutils
+    int currentDay = TimeUtils::getCurrentDay();
     if (currentDay != lastDay) {
         resetDailyCount();
         lastDay = currentDay;

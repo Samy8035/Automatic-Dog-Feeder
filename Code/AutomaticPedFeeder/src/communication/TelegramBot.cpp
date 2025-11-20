@@ -136,38 +136,60 @@ void TelegramBotManager::cmdFeedNow(const String& chatId) {
     }
 }
 
+// Variables globales para la cámara
+uint8_t* photoBuffer = nullptr;
+size_t photoSize = 0;
+size_t photoIndex = 0;
+
+// Callback: quedan más datos por enviar?
+bool moreDataAvailable() {
+    return photoIndex < photoSize;
+}
+
+// Callback: obtener siguiente byte
+uint8_t getNextByte() {
+    return photoBuffer[photoIndex++];
+}
+
+// Callback: preparar siguiente buffer (no usado, devolvemos nullptr)
+uint8_t* getNextBuffer() {
+    return nullptr;
+}
+
+// Callback: reset de la lectura
+int resetCallback() {
+    photoIndex = 0;
+    return 0;
+}
+
 void TelegramBotManager::cmdPhoto(const String& chatId) {
-    #ifdef DISABLE_CAMERA
-    bot->sendMessage(chatId, "❌ Cámara no disponible en este dispositivo", "");
-    return;
-    #else
-    
     if (!cameraController->isInitialized()) {
         bot->sendMessage(chatId, "❌ Cámara no inicializada", "");
         return;
     }
-    
+
     bot->sendMessage(chatId, "📸 Capturando foto...", "");
-    
-    size_t photoSize;
-    uint8_t* photoData = cameraController->capturePhoto(&photoSize);
-    
-    if (photoData && photoSize > 0) {
-        bool sent = bot->sendPhotoByBinary(chatId, "image/jpeg", photoSize, 
-                                           photoData, false, "");
-        
-        if (sent) {
-            bot->sendMessage(chatId, "✅ Foto enviada", "");
-        } else {
-            bot->sendMessage(chatId, "❌ Error al enviar foto", "");
-        }
-        
-        cameraController->releaseFrameBuffer();
+
+    photoBuffer = cameraController->capturePhoto(&photoSize);
+    photoIndex = 0;
+
+    if (photoBuffer && photoSize > 0) {
+        String res = bot->sendPhotoByBinary(chatId,
+                                           "image/jpeg",
+                                           photoSize,
+                                           moreDataAvailable,
+                                           getNextByte,
+                                           getNextBuffer,
+                                           resetCallback);
+        if (res.length() > 0) bot->sendMessage(chatId, "✅ Foto enviada", "");
+        else                  bot->sendMessage(chatId, "❌ Error al enviar foto", "");
     } else {
         bot->sendMessage(chatId, "❌ Error al capturar foto", "");
     }
-    #endif
+
+    cameraController->releaseFrameBuffer();
 }
+
 
 void TelegramBotManager::cmdSensors(const String& chatId) {
     EnvironmentData env = sensorManager->getEnvironmentData();

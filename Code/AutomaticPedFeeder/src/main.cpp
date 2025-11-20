@@ -11,6 +11,7 @@
 #include "communication/TelegramBot.h"
 #include "storage/ConfigManager.h"
 #include "utils/Logger.h"
+#include "utils/TimeUtils.h"
 #include <time.h>
 
 // ========== OBJETOS GLOBALES ==========
@@ -100,27 +101,15 @@ void setup() {
     
     if (WiFi.status() == WL_CONNECTED) {
         logger.info("WiFi conectado - IP: " + WiFi.localIP().toString());
-        // ================================
-        // 🔵 SINCRONIZACIÓN NTP
-        // ================================
-        setenv("TZ", "CET-1CEST,M3.5.0/2,M10.5.0/3", 1);
-        tzset();
 
-        configTime(0, 0, "pool.ntp.org", "time.nist.gov");
         logger.info("Sincronizando hora por NTP...");
+        TimeUtils::init();
 
-        struct tm timeinfo;
-        int tries = 0;
-        while (!getLocalTime(&timeinfo) && tries < 10) {
-            delay(500);
-            tries++;
-        }
-
-        if (tries < 10)
+        if (TimeUtils::getCurrentDay() != -1)
             logger.info("Hora NTP obtenida ✔️");
         else
             logger.warning("No se pudo obtener hora NTP ❌");
-        // ================================
+
     } else {
         logger.error("No se pudo conectar a WiFi");
     }
@@ -191,15 +180,6 @@ void setup() {
     logger.info(sensorManager.getEnvironmentStatus());
 }
 
-
-int getCurrentDay() { //!crear un TimeUtils
-    struct tm timeinfo;
-    if (getLocalTime(&timeinfo)) {
-        return timeinfo.tm_mday; // día del mes 1..31
-    }
-    return -1; // indica que no hay hora válida
-}
-
 // ========== LOOP ==========
 
 void loop() {
@@ -224,7 +204,7 @@ void loop() {
     
     // Reset diario del contador de alimentaciones
     static int lastDay = -1;
-    int currentDay = getCurrentDay();
+    int currentDay = TimeUtils::getCurrentDay();
     if (currentDay != -1)
     {
         if (currentDay != lastDay)

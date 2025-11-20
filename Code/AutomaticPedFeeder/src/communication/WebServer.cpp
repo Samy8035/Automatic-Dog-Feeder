@@ -14,9 +14,9 @@ WebServerManager::WebServerManager(FeedingLogic* feeding, StepperController* ste
 }
 
 bool WebServerManager::begin() {
-    // Inicializar LITTLEFS
-    if (!LITTLEFS.begin(true)) {
-        Serial.println("Error al montar LITTLEFS");
+    // Inicializar LittleFS
+    if (!LittleFS.begin(true)) {
+        Serial.println("Error al montar LittleFS");
         return false;
     }
     
@@ -41,18 +41,18 @@ void WebServerManager::setupRoutes() {
 
 void WebServerManager::setupStaticRoutes() {
     // Servir archivos estáticos
-    server.serveStatic("/", LITTLEFS, "/web/").setDefaultFile("index.html");
+    server.serveStatic("/", LittleFS, "/web/").setDefaultFile("index.html");
     
     server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-        request->send(LITTLEFS, "/web/index.html", "text/html");
+        request->send(LittleFS, "/web/index.html", "text/html");
     });
     
     server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest* request) {
-        request->send(LITTLEFS, "/web/style.css", "text/css");
+        request->send(LittleFS, "/web/style.css", "text/css");
     });
     
     server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest* request) {
-        request->send(LITTLEFS, "/web/script.js", "application/javascript");
+        request->send(LittleFS, "/web/script.js", "application/javascript");
     });
 }
 
