@@ -37,19 +37,20 @@ void WebServerManager::update() {
 }
 
 void WebServerManager::setupRoutes() {
-    setupStaticRoutes();
     setupAPIRoutes();
     setupCameraRoutes();
+    setupStaticRoutes();
 }
 
 void WebServerManager::setupStaticRoutes() {
-    // Servir archivos estáticos
-    server.serveStatic("/", LittleFS, "/web/").setDefaultFile("index.html");
+    // ⚠️ IMPORTANTE: Primero definir rutas API, DESPUÉS archivos estáticos
     
+    // Ruta raíz
     server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
         request->send(LittleFS, "/web/index.html", "text/html");
     });
     
+    // CSS y JavaScript
     server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest* request) {
         request->send(LittleFS, "/web/style.css", "text/css");
     });
@@ -57,6 +58,11 @@ void WebServerManager::setupStaticRoutes() {
     server.on("/script.js", HTTP_GET, [](AsyncWebServerRequest* request) {
         request->send(LittleFS, "/web/script.js", "application/javascript");
     });
+    
+    // ✅ serveStatic como fallback SOLO para otros archivos
+    // Excluir /api/ y /camera/ para que no interfiera
+    server.serveStatic("/", LittleFS, "/web/")
+          .setDefaultFile("index.html");
 }
 
 void WebServerManager::setupAPIRoutes() {
