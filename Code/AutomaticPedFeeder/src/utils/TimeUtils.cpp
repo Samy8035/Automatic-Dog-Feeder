@@ -1,11 +1,11 @@
 #include "TimeUtils.h"
 
 void TimeUtils::init() {
-    setenv("TZ", "CET-1CEST,M3.5.0/2,M10.5.0/3", 1);
-    tzset();
     
-    // Iniciar sincronización sin bloquear
-    configTime(0, 0, "pool.ntp.org", "time.nist.gov", "time.google.com");
+    configTzTime("CET-1CEST,M3.5.0/2,M10.5.0/3",
+                 "pool.ntp.org",
+                 "time.nist.gov",
+                 "time.google.com");
     
     // Intentar sincronizar de forma no bloqueante
     struct tm timeinfo;
