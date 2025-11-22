@@ -1,0 +1,158 @@
+#include <Arduino.h>
+#include <DHT.h>
+
+// Configuración
+#define DHT_PIN 5
+#define DHT_TYPE DHT11
+#define PIR_PIN 18
+#define BUZZER_PIN 19
+
+DHT dht(DHT_PIN, DHT_TYPE);
+
+void setup() {
+    Serial.begin(115200);
+    delay(1000);
+    
+    Serial.println("\n=== TEST DE SENSORES ===");
+    Serial.println("Comandos disponibles:");
+    Serial.println("1 - Leer DHT11 (temperatura/humedad)");
+    Serial.println("2 - Leer PIR (movimiento)");
+    Serial.println("3 - Probar Buzzer (sonido)");
+    Serial.println("4 - Monitoreo continuo");
+    Serial.println("========================\n");
+    
+    // Inicializar sensores
+    dht.begin();
+    pinMode(PIR_PIN, INPUT);
+    pinMode(BUZZER_PIN, OUTPUT);
+    digitalWrite(BUZZER_PIN, LOW);
+}
+
+void testDHT() {
+    Serial.println("\n--- Test DHT11 ---");
+    
+    float temp = dht.readTemperature();
+    float hum = dht.readHumidity();
+    
+    Serial.print("Temperatura: ");
+    if (isnan(temp)) {
+        Serial.println("ERROR - Verifica conexiones");
+        Serial.println("  VCC -> 3.3V");
+        Serial.println("  GND -> GND");
+        Serial.println("  DATA -> GPIO 5");
+    } else {
+        Serial.print(temp, 1);
+        Serial.println(" °C ✓");
+    }
+    
+    Serial.print("Humedad: ");
+    if (isnan(hum)) {
+        Serial.println("ERROR");
+    } else {
+        Serial.print(hum, 1);
+        Serial.println(" % ✓");
+    }
+    
+    Serial.println("------------------\n");
+}
+
+void testPIR() {
+    Serial.println("\n--- Test PIR ---");
+    Serial.println("Mueve la mano frente al sensor...");
+    Serial.println("Esperando 10 segundos...");
+    
+    unsigned long start = millis();
+    bool detected = false;
+    
+    while (millis() - start < 10000) {
+        if (digitalRead(PIR_PIN) == HIGH) {
+            Serial.println("¡MOVIMIENTO DETECTADO! ✓");
+            detected = true;
+            delay(1000);
+        }
+        delay(100);
+    }
+    
+    if (!detected) {
+        Serial.println("No se detectó movimiento");
+        Serial.println("Verifica:");
+        Serial.println("  VCC -> 5V (o 3.3V)");
+        Serial.println("  GND -> GND");
+        Serial.println("  OUT -> GPIO 18");
+        Serial.println("  Potenciómetros ajustados");
+    }
+    
+    Serial.println("----------------\n");
+}
+
+void testBuzzer() {
+    Serial.println("\n--- Test Buzzer ---");
+    
+    Serial.println("Sonido 1: 1000 Hz");
+    tone(BUZZER_PIN, 1000, 500);
+    delay(700);
+    
+    Serial.println("Sonido 2: 2000 Hz");
+    tone(BUZZER_PIN, 2000, 500);
+    delay(700);
+    
+    Serial.println("Sonido 3: 3000 Hz");
+    tone(BUZZER_PIN, 3000, 500);
+    delay(700);
+    
+    Serial.println("Si no escuchas nada:");
+    Serial.println("  + -> GPIO 19");
+    Serial.println("  - -> GND");
+    Serial.println("  (Prueba invertir polaridad si es buzzer pasivo)");
+    Serial.println("-------------------\n");
+}
+
+void monitorContinuo() {
+    Serial.println("\n=== MONITOREO CONTINUO ===");
+    Serial.println("Presiona 'x' para salir\n");
+    
+    while (true) {
+        if (Serial.available()) {
+            char c = Serial.read();
+            if (c == 'x') break;
+        }
+        
+        // Leer sensores
+        float temp = dht.readTemperature();
+        float hum = dht.readHumidity();
+        bool pir = digitalRead(PIR_PIN);
+        
+        // Mostrar en una línea
+        Serial.print("Temp: ");
+        Serial.print(isnan(temp) ? -999 : temp, 1);
+        Serial.print("°C | Hum: ");
+        Serial.print(isnan(hum) ? -999 : hum, 1);
+        Serial.print("% | PIR: ");
+        Serial.println(pir ? "DETECTADO" : "---");
+        
+        delay(2000);
+    }
+    
+    Serial.println("\nMonitoreo detenido\n");
+}
+
+void loop() {
+    if (Serial.available()) {
+        char cmd = Serial.read();
+        
+        switch (cmd) {
+            case '1':
+                testDHT();
+                break;
+            case '2':
+                testPIR();
+                break;
+            case '3':
+                testBuzzer();
+                break;
+            case '4':
+                monitorContinuo();
+                break;
+        }
+    }
+}

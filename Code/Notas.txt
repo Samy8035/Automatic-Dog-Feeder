@@ -1,0 +1,32 @@
+Vref:
+
+Bien 1: .589
+
+
+Con R_s = 0.10 Ω:
+
+Vref​=Ilimit​×8×0.10=Ilimit​×0.8
+
+I = 1.0 A → Vref = 0.80 V
+
+I = 1.2 A → Vref = 0.96 V
+
+I = 1.5 A → Vref = 1.20 V
+
+
+
+
+
+
+
+12 V / 4 A
+
+Electrolítico: 470 µF / 35 V (bajo ESR) entre VMOT y GND, lo más cerca posible del A4988.
+
+Cerámico: 100 nF (0.1 µF) en paralelo, también entre VMOT y GND, justo al lado del driver.
+
+
+
+
+
+40 pasos con velocidad 20 o 10

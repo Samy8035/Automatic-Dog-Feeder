@@ -8,13 +8,15 @@
 // ========== CONFIGURACIÓN DE HARDWARE ==========
 
 // Pines del Motor Stepper
-#define STEPPER_STEP_PIN 2
-#define STEPPER_DIR_PIN 4
-#define STEPPER_ENABLE_PIN 15
+#define STEPPER_STEP_PIN 14
+#define STEPPER_DIR_PIN 13 //Antes 15
+#define STEPPER_ENABLE_PIN 4
+// Pin para microstepping (MS1, MS2, MS3 juntos)
+#define STEPPER_MS_PIN 15
 
 // Sensor DHT22 (Temperatura y Humedad)
-#define DHT_PIN 5
-#define DHT_TYPE DHT22
+#define DHT_PIN 21
+#define DHT_TYPE DHT11
 
 // Sensor PIR (Movimiento Infrarrojo)
 #define PIR_PIN 18
@@ -63,8 +65,8 @@
 
 // ========== CONFIGURACIÓN DE SENSORES ==========
 
-#define TEMP_MIN_ALERT 5.0   // °C
-#define TEMP_MAX_ALERT 35.0  // °C
+#define TEMP_MIN_ALERT 10.0   // °C
+#define TEMP_MAX_ALERT 45.0  // °C
 #define HUMIDITY_MAX_ALERT 70.0  // %
 
 #define PIR_DETECTION_TIMEOUT 2000  // ms para confirmar presencia

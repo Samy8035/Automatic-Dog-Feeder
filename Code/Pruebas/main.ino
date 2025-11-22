@@ -26,13 +26,13 @@
 // ========== CONFIGURACIÓN DE PINES ==========
 // Motor paso a paso (compatible con A4988/DRV8825)
 // Usar pines GPIO disponibles que NO interfieran con la cámara
-#define STEP_PIN 1
-#define DIR_PIN 2
-#define ENABLE_PIN 42
+#define STEP_PIN 14
+#define DIR_PIN 13
+#define ENABLE_PIN 4
 
 // Sensores y actuadores
-#define PIR_PIN 41
-#define BUZZER_PIN 21
+#define PIR_PIN 18
+#define BUZZER_PIN 19
 
 // Configuración del ESP32-S3 WROOM CAM
 #define PWDN_GPIO_NUM     -1
@@ -53,8 +53,8 @@
 #define PCLK_GPIO_NUM     13
 
 // ========== CONFIGURACIÓN WIFI ==========
-const char* ssid = "TU_WIFI";
-const char* password = "TU_PASSWORD";
+const char* ssid = "Livebox6-9F30";
+const char* password = "wifiabajo1";
 
 // ========== SERVIDOR WEB ==========
 WebServer server(80);
